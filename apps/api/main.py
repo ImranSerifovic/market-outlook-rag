@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from pathlib import Path
 from typing import List
 
@@ -69,6 +70,112 @@ class AskResponse(BaseModel):
     key_points: List[str]
     citations: List[Citation]
     not_found: bool
+
+# --- Citation enforcement helpers ---
+_NUM_TOKEN_RE = re.compile(r"(US\$\s?\d+(?:\.\d+)?\s?(?:billion|trillion)?)|(\$\s?\d+(?:\.\d+)?)|(\b\d+(?:\.\d+)?%\b)|(\b\d{4}\b)|(\b\d+(?:\.\d+)?\b)", re.IGNORECASE)
+
+
+def _extract_numeric_tokens(text: str) -> List[str]:
+    if not text:
+        return []
+    tokens: List[str] = []
+    for m in _NUM_TOKEN_RE.finditer(text):
+        tok = next((g for g in m.groups() if g), "")
+        tok = tok.strip()
+        if not tok:
+            continue
+        # Normalize whitespace (e.g., "US$ 130" -> "US$ 130")
+        tok = re.sub(r"\s+", " ", tok)
+        tokens.append(tok)
+    # Deduplicate while preserving order
+    seen = set()
+    out: List[str] = []
+    for t in tokens:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
+def _snippet_around(text: str, needle: str, window: int = 90) -> str:
+    if not text or not needle:
+        return ""
+    idx = text.lower().find(needle.lower())
+    if idx == -1:
+        return ""
+    start = max(0, idx - window)
+    end = min(len(text), idx + len(needle) + window)
+    snippet = text[start:end].replace("\n", " ")
+    snippet = re.sub(r"\s+", " ", snippet).strip()
+    # Keep quotes short-ish
+    if len(snippet) > 120:
+        snippet = snippet[:117].rstrip() + "…"
+    return snippet
+
+
+def _ensure_numeric_citations(data: dict, docs: List[str], metas: List[dict]) -> dict:
+    """Ensure every numeric token in answer/key_points is backed by at least one citation.
+
+    Strategy:
+    - If the number appears in any already-cited chunk, it's covered.
+    - If it's present in retrieved chunks but not cited, add a citation automatically.
+    - If it's not present in retrieved chunks at all, we do NOT fabricate a citation.
+    """
+    answer_text = (data.get("answer") or "")
+    key_points = data.get("key_points") or []
+    kp_text = "\n".join([kp for kp in key_points if isinstance(kp, str)])
+    all_text = f"{answer_text}\n{kp_text}"
+
+    tokens = _extract_numeric_tokens(all_text)
+    if not tokens:
+        return data
+
+    citations = data.get("citations") if isinstance(data.get("citations"), list) else []
+
+    # Build lookup: chunk_id -> (page, doc_text)
+    chunk_lookup = {m["chunk_id"]: (m["page"], d) for d, m in zip(docs, metas)}
+
+    # Which chunks are already cited?
+    cited_chunk_ids = set()
+    for c in citations:
+        if isinstance(c, dict) and c.get("chunk_id") in chunk_lookup:
+            cited_chunk_ids.add(c.get("chunk_id"))
+
+    def token_is_covered(tok: str) -> bool:
+        for cid in cited_chunk_ids:
+            _, txt = chunk_lookup[cid]
+            if tok.lower() in txt.lower():
+                return True
+        return False
+
+    # Add citations for uncovered tokens that exist in retrieved docs
+    for tok in tokens:
+        if token_is_covered(tok):
+            continue
+
+        # Find a retrieved chunk that contains the token
+        found_cid = None
+        for cid, (pg, txt) in chunk_lookup.items():
+            if tok.lower() in txt.lower():
+                found_cid = cid
+                break
+
+        if not found_cid:
+            # Token not present in retrieved context; leave it (LLM may be wrong).
+            # Frontend can surface this via missing-citation behavior, or you can choose to hard-fail.
+            continue
+
+        pg, txt = chunk_lookup[found_cid]
+        snippet = _snippet_around(txt, tok)
+        citations.append({
+            "chunk_id": found_cid,
+            "page": pg,
+            "quote": snippet or f"Contains reference to {tok}",
+        })
+        cited_chunk_ids.add(found_cid)
+
+    data["citations"] = citations
+    return data
 
 @app.get("/health")
 def health():
@@ -248,5 +355,12 @@ def ask(req: AskRequest):
                 print(f"[WARN] Invalid chunk_id in citation: {chunk_id}")
         
         data["citations"] = validated_citations
+
+    # 6) Ensure every numeric/statistical token in answer/key_points is backed by at least one cited chunk.
+    # This prevents situations where the model states a number but forgets to include a citation for it.
+    try:
+        data = _ensure_numeric_citations(data, docs, metas)
+    except Exception as e:
+        print(f"[WARN] Numeric citation enforcement failed: {e}")
 
     return AskResponse(**data)
