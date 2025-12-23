@@ -167,15 +167,33 @@ def ask(req: AskRequest):
         "- If not_found=true, citations should be an empty array\n"
     )
 
-    llm = oai.chat.completions.create(
-        model="gpt-5-mini",  # Fastest model - 2-3x faster than gpt-4.1-mini
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        temperature=0.2,
-        response_format={"type": "json_object"},  # Forces JSON, faster parsing
-    )
+    # Try GPT-5 mini first (fastest, most cost-efficient), fallback to GPT-4o-mini if unavailable
+    model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")  # Allow override via env var
+    try:
+        llm = oai.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.2,
+            response_format={"type": "json_object"},  # Forces JSON, faster parsing
+        )
+    except Exception as e:
+        # If GPT-5 model unavailable (wrong name or access tier), fallback to GPT-4o-mini
+        if "gpt-5" in model_name.lower():
+            print(f"[WARN] GPT-5 model '{model_name}' unavailable, falling back to gpt-4o-mini. Error: {e}")
+            llm = oai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                temperature=0.2,
+                response_format={"type": "json_object"},
+            )
+        else:
+            raise
 
     raw = llm.choices[0].message.content.strip()
 
