@@ -64,7 +64,12 @@ class AskResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "chroma_dir": CHROMA_DIR}
+    return {
+        "status": "ok",
+        "chroma_dir": CHROMA_DIR,
+        "allowed_origins": allowed_origins,
+        "allowed_origins_env": os.getenv("ALLOWED_ORIGINS"),
+    }
 
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
