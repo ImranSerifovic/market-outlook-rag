@@ -31,9 +31,13 @@ app = FastAPI(title="Market Outlook RAG API")
 # list via ALLOWED_ORIGINS, e.g. "http://localhost:3000,https://your-app.vercel.app".
 _default_origins = ["http://localhost:3000"]
 _allowed = os.getenv("ALLOWED_ORIGINS")
-allowed_origins = (
-    [o.strip() for o in _allowed.split(",") if o.strip()] if _allowed else _default_origins
-)
+
+if _allowed and _allowed.strip() == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = (
+        [o.strip() for o in _allowed.split(",") if o.strip()] if _allowed else _default_origins
+    )
 
 app.add_middleware(
     CORSMiddleware,
