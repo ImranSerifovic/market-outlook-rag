@@ -11,13 +11,13 @@ from pydantic import BaseModel, Field
 import chromadb
 from openai import OpenAI
 
-# Load .env from repo root no matter where we run from
+# Load .env from repo root when present (platform deploys typically inject env vars)
 ROOT = Path(__file__).resolve().parents[2]
-load_dotenv(ROOT / ".env")
+load_dotenv(ROOT / ".env", override=False)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    raise RuntimeError("Missing OPENAI_API_KEY in .env")
+    raise RuntimeError("Missing OPENAI_API_KEY. Set it in the environment (or locally in ROOT/.env).")
 
 oai = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -27,11 +27,18 @@ col = ch.get_or_create_collection(name="market_outlook")
 
 app = FastAPI(title="Market Outlook RAG API")
 
-# Allow Next.js dev server to call the API
+# CORS: allow the Next.js frontend (localhost + Vercel). Provide a comma-separated
+# list via ALLOWED_ORIGINS, e.g. "http://localhost:3000,https://your-app.vercel.app".
+_default_origins = ["http://localhost:3000"]
+_allowed = os.getenv("ALLOWED_ORIGINS")
+allowed_origins = (
+    [o.strip() for o in _allowed.split(",") if o.strip()] if _allowed else _default_origins
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

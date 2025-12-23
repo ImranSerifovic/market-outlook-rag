@@ -6,6 +6,7 @@ from openai import OpenAI
 import json
 import sys
 import time
+from fastapi.middleware.cors import CORSMiddleware
 
 # #region agent log
 # Write logs to a safe location in any environment (override via MOA_LOG_PATH if desired)
