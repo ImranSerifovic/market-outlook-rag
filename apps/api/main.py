@@ -35,9 +35,11 @@ _allowed = os.getenv("ALLOWED_ORIGINS")
 if _allowed and _allowed.strip() == "*":
     allowed_origins = ["*"]
 else:
-    allowed_origins = (
+    raw_origins = (
         [o.strip() for o in _allowed.split(",") if o.strip()] if _allowed else _default_origins
     )
+    # Normalize: browsers send Origin without a trailing slash
+    allowed_origins = [o.rstrip("/") for o in raw_origins]
 
 app.add_middleware(
     CORSMiddleware,
