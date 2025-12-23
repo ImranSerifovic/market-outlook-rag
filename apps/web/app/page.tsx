@@ -40,6 +40,7 @@ export default function Page() {
 
   const [question, setQuestion] = useState("");
   const [loading, setLoading] = useState(false);
+  const [warming, setWarming] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AskResponse | null>(null);
   const [history, setHistory] = useState<string[]>([]);
@@ -80,6 +81,15 @@ export default function Page() {
       // ignore
     }
   }, []);
+
+  // Warm the backend (helps with cold starts on serverless hosts)
+  useEffect(() => {
+    fetch(`${API_BASE}/health`)
+      .catch(() => {
+        // ignore warmup errors
+      })
+      .finally(() => setWarming(false));
+  }, [API_BASE]);
 
   useEffect(() => {
     try {
@@ -321,7 +331,15 @@ export default function Page() {
                   </button>
                 ))}
               </div>
-              <p className="mt-3 text-sm text-zinc-500">Tip: press Enter to submit, Shift+Enter for a new line.</p>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-sm text-zinc-500">Tip: press Enter to submit, Shift+Enter for a new line.</p>
+                {warming && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950/30 px-3 py-1 text-xs text-zinc-400">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-500 animate-pulse" />
+                    Initializing…
+                  </div>
+                )}
+              </div>
             </section>
 
             <section className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-6">
