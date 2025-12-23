@@ -6,12 +6,20 @@ WORKDIR /app
 COPY apps/api/requirements.txt /app/apps/api/requirements.txt
 RUN pip install --no-cache-dir -r /app/apps/api/requirements.txt
 
-# Copy app + ingestion utils + prebuilt Chroma index
+# Copy app + ingestion utils + data
 COPY apps/api /app/apps/api
 COPY ingestion /app/ingestion
+COPY data /app/data
+
+# Copy startup script and make it executable
+COPY apps/api/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 ENV PYTHONPATH=/app
 EXPOSE 8000
 
-# Use Render's PORT if provided, otherwise 8000 for local
-CMD ["sh", "-c", "uvicorn apps.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Create storage directory
+RUN mkdir -p /app/storage/chroma
+
+# Use startup script that builds index if needed
+CMD ["/app/start.sh"]

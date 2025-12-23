@@ -72,11 +72,25 @@ class AskResponse(BaseModel):
 
 @app.get("/health")
 def health():
+    # Get collection stats
+    count = col.count()
+    
+    # Sample some documents to see page range
+    sample_results = col.get(limit=min(100, count))
+    pages_in_index = set()
+    if sample_results.get("metadatas"):
+        for meta in sample_results["metadatas"]:
+            if "page" in meta:
+                pages_in_index.add(meta["page"])
+    
     return {
         "status": "ok",
         "chroma_dir": CHROMA_DIR,
         "allowed_origins": allowed_origins,
         "allowed_origins_env": os.getenv("ALLOWED_ORIGINS"),
+        "collection_count": count,
+        "pages_in_index": sorted(list(pages_in_index)) if pages_in_index else [],
+        "page_range": f"{min(pages_in_index)}-{max(pages_in_index)}" if pages_in_index else "none",
     }
 
 @app.options("/ask")
@@ -99,11 +113,17 @@ def ask(req: AskRequest):
     results = col.query(
         query_embeddings=[q_emb],
         n_results=req.top_k,
-        include=["documents", "metadatas"]
+        include=["documents", "metadatas", "distances"]
     )
 
     docs = results["documents"][0]
     metas = results["metadatas"][0]
+    distances = results["distances"][0] if "distances" in results else []
+
+    # Debug: log retrieved pages
+    retrieved_pages = [m["page"] for m in metas]
+    print(f"[DEBUG] Retrieved {len(docs)} chunks from pages: {sorted(set(retrieved_pages))}")
+    print(f"[DEBUG] Page range: {min(retrieved_pages) if retrieved_pages else 'N/A'} - {max(retrieved_pages) if retrieved_pages else 'N/A'}")
 
     context_blocks = []
     for d, m in zip(docs, metas):
