@@ -26,8 +26,8 @@ export default function Page() {
   const PDF_PUBLIC_PATH = "/report.pdf";
 
   const SUGGESTED_QUESTIONS: string[] = [
-    "What are the main themes of the report?",
     "What does the report say about the secondaries market and liquidity?",
+    "What does the report say about the outlook for real estate sectors like data centers and life sciences, and what demand drivers does it cite?",
     "What are the key risks and opportunities discussed for private credit?",
     "What does the report highlight about infrastructure and energy transition?",
   ];
@@ -183,7 +183,7 @@ export default function Page() {
           <div>
             <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-7">
               <form ref={formRef} onSubmit={onAsk} className="space-y-4">
-                <div>
+                <div className="relative">
                   <textarea
                     ref={textareaRef}
                     value={question}
@@ -191,14 +191,15 @@ export default function Page() {
                     onKeyDown={onQuestionKeyDown}
                     rows={4}
                     placeholder='e.g., "What are the main themes of the report?"'
-                    className="w-full resize-none rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700"
+                    className={`w-full resize-none rounded-2xl border bg-zinc-950/60 px-4 py-3 text-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 transition-all ${
+                      loading
+                        ? "border-white/30 glow-border"
+                        : "border-zinc-800"
+                    }`}
                   />
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm text-zinc-400">
-                    Answers cite the report using retrieved passages.
-                  </div>
 
                   <button
                     type="submit"
@@ -409,6 +410,22 @@ export default function Page() {
         }
         .dot:nth-child(2) { animation-delay: 0.15s; }
         .dot:nth-child(3) { animation-delay: 0.3s; }
+
+        @keyframes glow {
+          0%, 100% {
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3),
+                        0 0 12px rgba(255, 255, 255, 0.2),
+                        0 0 16px rgba(255, 255, 255, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5),
+                        0 0 18px rgba(255, 255, 255, 0.3),
+                        0 0 24px rgba(255, 255, 255, 0.2);
+          }
+        }
+        .glow-border {
+          animation: glow 2s ease-in-out infinite;
+        }
 
         .chip, .history-item {
           transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
