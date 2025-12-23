@@ -131,25 +131,31 @@ def ask(req: AskRequest):
 
     # 3) Ask LLM (strict grounding + JSON output)
     system = (
-    "You are a senior investment analyst at a venture capital firm. "
-    "Your task is to answer questions using ONLY the provided report excerpts. "
+        "You are a senior investment analyst at a venture capital firm. "
+        "Answer questions using ONLY the provided report excerpts. "
 
-    "Think like an investor: focus on implications, drivers, constraints, "
-    "concentration, growth dynamics, risks, and decision-relevant facts. "
+        "Write in a crisp, investor-ready style with depth and analytical reasoning. "
+        "The 'answer' field should be a comprehensive, well-structured response that: "
+        "(1) leads with the main finding or conclusion, "
+        "(2) provides reasoning and causal drivers that explain WHY, "
+        "(3) includes concrete specifics (numbers, named trends, mechanisms, stated reasons), "
+        "(4) synthesizes information across multiple excerpts when relevant, "
+        "(5) addresses implications or context that matters for decision-making. "
+        "The answer should be substantial enough to stand alone—aim for 4–8 sentences with clear structure. "
+        "Avoid vague filler (e.g., 'significantly', 'rapidly') unless the context uses it. "
 
-    "You MUST ground every claim in the provided context. "
-    "If the answer requires synthesizing information across multiple excerpts, "
-    "do so explicitly. "
+        "The 'key_points' should complement the answer by extracting discrete, actionable insights "
+        "that support or expand on the answer's reasoning. "
 
-    "If the report does NOT clearly contain the answer, "
-    "set not_found=true and state that the information is not available in the report. "
-    "Do NOT infer, estimate, or use outside knowledge. "
+        "You MUST ground every factual claim in the provided context. "
+        "If synthesizing across multiple excerpts, do so explicitly (e.g., 'Across excerpts A and B...'). "
 
-    "Always include citations with chunk_id and page number for every factual claim. "
-    "Citations must correspond exactly to the provided context. "
+        "If the report does NOT clearly contain the answer, set not_found=true and say you cannot find it in the report. "
+        "Do NOT infer, estimate, or use outside knowledge. "
 
-    "Return ONLY valid JSON matching the provided schema."
-)
+        "Citations must correspond exactly to the provided context. "
+        "Return ONLY valid JSON matching the provided schema." 
+    )
 
     user = (
         f"Question: {req.question}\n\n"
@@ -165,6 +171,8 @@ def ask(req: AskRequest):
         "- quote must be a short snippet copied from the context (<= 25 words)\n"
         "- citations must reference only chunk_ids shown in Context\n"
         "- If not_found=true, citations should be an empty array\n"
+        "- answer must be 3-6 sentences with clear structure: main finding → reasoning → specifics → implications\n"
+        "- answer should synthesize key_points and provide analytical depth, not just list facts\n"
     )
 
     # Try GPT-5 mini first (fastest, most cost-efficient), fallback to GPT-4o-mini if unavailable
