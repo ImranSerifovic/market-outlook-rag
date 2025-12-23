@@ -2,9 +2,17 @@ import re
 import json
 import os
 import time
+from pathlib import Path
 
 # #region agent log
-LOG_PATH = "/Users/imranserifovic/market-outlook-rag/.cursor/debug.log"
+# Write logs to a safe location in any environment (override via MOA_LOG_PATH if desired)
+_DEFAULT_LOG = Path(os.getenv("TMPDIR", "/tmp")) / "market_outlook_debug.log"
+LOG_PATH = os.getenv("MOA_LOG_PATH", str(_DEFAULT_LOG))
+# Ensure log directory exists
+try:
+    Path(LOG_PATH).parent.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass  # If we can't create the directory, logging will just fail silently
 # #endregion
 
 def chunk_text(text: str, max_chars: int = 1800, overlap: int = 250):
