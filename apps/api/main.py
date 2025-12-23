@@ -75,11 +75,11 @@ def health():
     # Get collection stats
     count = col.count()
     
-    # Sample some documents to see page range
-    sample_results = col.get(limit=min(100, count))
+    # Get all documents to see complete page range (may be slow for large indexes)
+    all_results = col.get(limit=count)
     pages_in_index = set()
-    if sample_results.get("metadatas"):
-        for meta in sample_results["metadatas"]:
+    if all_results.get("metadatas"):
+        for meta in all_results["metadatas"]:
             if "page" in meta:
                 pages_in_index.add(meta["page"])
     
@@ -91,6 +91,7 @@ def health():
         "collection_count": count,
         "pages_in_index": sorted(list(pages_in_index)) if pages_in_index else [],
         "page_range": f"{min(pages_in_index)}-{max(pages_in_index)}" if pages_in_index else "none",
+        "total_pages_indexed": len(pages_in_index),
     }
 
 @app.options("/ask")
@@ -122,8 +123,10 @@ def ask(req: AskRequest):
 
     # Debug: log retrieved pages
     retrieved_pages = [m["page"] for m in metas]
-    print(f"[DEBUG] Retrieved {len(docs)} chunks from pages: {sorted(set(retrieved_pages))}")
-    print(f"[DEBUG] Page range: {min(retrieved_pages) if retrieved_pages else 'N/A'} - {max(retrieved_pages) if retrieved_pages else 'N/A'}")
+    unique_pages = sorted(set(retrieved_pages))
+    print(f"[DEBUG] Retrieved {len(docs)} chunks from pages: {unique_pages}")
+    if retrieved_pages:
+        print(f"[DEBUG] Retrieved page range: {min(retrieved_pages)} - {max(retrieved_pages)} (out of all indexed pages)")
 
     context_blocks = []
     for d, m in zip(docs, metas):
@@ -170,33 +173,18 @@ def ask(req: AskRequest):
         "- answer should synthesize key_points with analytical depth, not just list facts\n"
     )
 
-    # Try GPT-5 mini first (fastest, most cost-efficient), fallback to GPT-4o-mini if unavailable
-    model_name = os.getenv("OPENAI_MODEL", "gpt-5-mini")  # Allow override via env var
-    try:
-        llm = oai.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            temperature=0.2,
-            response_format={"type": "json_object"},  # Forces JSON, faster parsing
-        )
-    except Exception as e:
-        # If GPT-5 model unavailable (wrong name or access tier), fallback to GPT-4o-mini
-        if "gpt-5" in model_name.lower():
-            print(f"[WARN] GPT-5 model '{model_name}' unavailable, falling back to gpt-4o-mini. Error: {e}")
-            llm = oai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                temperature=0.2,
-                response_format={"type": "json_object"},
-            )
-        else:
-            raise
+    # Use GPT-4o-mini (fastest, most cost-effective available model)
+    # Set OPENAI_MODEL env var to override (e.g., "gpt-5-mini" if you have access)
+    model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+    llm = oai.chat.completions.create(
+        model=model_name,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        temperature=0.2,
+        response_format={"type": "json_object"},  # Forces JSON, faster parsing
+    )
 
     raw = llm.choices[0].message.content.strip()
 
