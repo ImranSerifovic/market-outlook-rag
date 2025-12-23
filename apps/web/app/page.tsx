@@ -143,7 +143,9 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900/80 via-zinc-800/30 via-zinc-900/60 to-zinc-950 text-zinc-100 relative">
+      <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950/50 via-transparent to-zinc-900/30 pointer-events-none" />
+      <div className="relative z-10">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,360px]">
           <header className="mb-8 relative">
@@ -177,8 +179,7 @@ export default function Page() {
               Market Outlook Analyst
             </h1>
             <p className="mt-3 text-lg text-zinc-300">
-              Ask questions about the report. Answers are grounded in retrieved
-              passages with page-level citations.
+              Ask questions about BlackRock&apos;s 2026 Private Markets Outlook
             </p>
           </header>
           <div>
@@ -356,6 +357,7 @@ export default function Page() {
           </aside>
         </div>
       </div>
+      </div>
       {pdfOpen && (
         <div className="fixed inset-0 z-50">
           <div
@@ -426,7 +428,7 @@ export default function Page() {
           transition: box-shadow 0.6s ease-in-out, border-color 0.6s ease-in-out;
         }
 
-        @keyframes glowBright {
+        @keyframes glowBrightPulse {
           0%, 100% {
             box-shadow: 0 0 6px rgba(255, 255, 255, 0.3),
                         0 0 10px rgba(255, 255, 255, 0.2),
@@ -438,9 +440,21 @@ export default function Page() {
                         0 0 20px rgba(255, 255, 255, 0.2);
           }
         }
+        @keyframes glowBrightFadeIn {
+          from {
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.1),
+                        0 0 6px rgba(255, 255, 255, 0.05);
+          }
+          to {
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.3),
+                        0 0 10px rgba(255, 255, 255, 0.2),
+                        0 0 14px rgba(255, 255, 255, 0.15);
+          }
+        }
         .glow-border-bright {
-          animation: glowBright 2s ease-in-out infinite;
-          transition: box-shadow 0.6s ease-in-out, border-color 0.6s ease-in-out;
+          animation: glowBrightFadeIn 0.8s ease-out forwards,
+                     glowBrightPulse 2s ease-in-out 0.8s infinite;
+          transition: border-color 0.6s ease-in-out;
         }
 
         .chip, .history-item {
