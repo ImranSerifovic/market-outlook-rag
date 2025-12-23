@@ -194,9 +194,9 @@ export default function Page() {
                     onBlur={() => setIsFocused(false)}
                     rows={4}
                     placeholder='e.g., "What are the main themes of the report?"'
-                    className={`w-full resize-none rounded-2xl border bg-zinc-950/60 px-4 py-3 text-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 transition-all ${
+                    className={`w-full resize-none rounded-2xl border bg-zinc-950/60 px-4 py-3 text-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 transition-all duration-500 ease-in-out ${
                       loading
-                        ? "border-white/50 glow-border-bright"
+                        ? "border-white/30 glow-border-bright"
                         : isFocused
                         ? "border-zinc-600 glow-border-subtle"
                         : "border-zinc-800"
@@ -204,12 +204,11 @@ export default function Page() {
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3">
-
+                <div className="flex justify-end gap-3">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="rounded-xl bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl bg-zinc-100 px-6 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
                   >
                     {loading ? (
                       <span className="inline-flex items-center gap-2">
@@ -424,24 +423,24 @@ export default function Page() {
         }
         .glow-border-subtle {
           animation: glowSubtle 2s ease-in-out infinite;
+          transition: box-shadow 0.6s ease-in-out, border-color 0.6s ease-in-out;
         }
 
         @keyframes glowBright {
           0%, 100% {
-            box-shadow: 0 0 12px rgba(255, 255, 255, 0.6),
-                        0 0 20px rgba(255, 255, 255, 0.4),
-                        0 0 30px rgba(255, 255, 255, 0.3),
-                        0 0 40px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.3),
+                        0 0 10px rgba(255, 255, 255, 0.2),
+                        0 0 14px rgba(255, 255, 255, 0.15);
           }
           50% {
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
-                        0 0 30px rgba(255, 255, 255, 0.6),
-                        0 0 40px rgba(255, 255, 255, 0.4),
-                        0 0 50px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.4),
+                        0 0 16px rgba(255, 255, 255, 0.25),
+                        0 0 20px rgba(255, 255, 255, 0.2);
           }
         }
         .glow-border-bright {
-          animation: glowBright 1.5s ease-in-out infinite;
+          animation: glowBright 2s ease-in-out infinite;
+          transition: box-shadow 0.6s ease-in-out, border-color 0.6s ease-in-out;
         }
 
         .chip, .history-item {
