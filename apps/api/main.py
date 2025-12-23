@@ -74,6 +74,7 @@ def health():
     }
 
 @app.post("/ask", response_model=AskResponse)
+@app.post("/api/ask", response_model=AskResponse)
 def ask(req: AskRequest):
     # 1) Embed query
     q_emb = oai.embeddings.create(
