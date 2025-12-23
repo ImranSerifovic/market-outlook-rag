@@ -137,12 +137,9 @@ def ask(req: AskRequest):
         "You are a senior investment analyst at a venture capital firm. "
         "Answer questions using ONLY the provided report excerpts. "
 
-        "IMPORTANT: Your answer can be written naturally and synthesize information, but citations must use EXACT QUOTES. "
+        "IMPORTANT: Your answer can paraphrase and synthesize information naturally. "
         "The 'answer' field can paraphrase or synthesize for readability, but every factual claim must be grounded in citations. "
-        "Every quote in the 'citations' array must be copied VERBATIM (word-for-word) from the context blocks above. "
-        "DO NOT combine multiple quotes into one citation. "
-        "DO NOT use quotes from pages that are not in the provided context. "
-        "Verify each quote exists exactly as written in the context before including it. "
+        "Citations are required to show sources - the 'quote' field can be a brief summary or reference to the relevant content, not necessarily an exact quote. "
 
         "Write in a crisp, investor-ready style with analytical depth. "
         "The 'answer' should be structured to: lead with the main finding, provide reasoning and causal drivers, "
@@ -166,8 +163,8 @@ def ask(req: AskRequest):
         "Citation format requirements: "
         "- chunk_id must match EXACTLY a chunk_id shown in the Context blocks "
         "- page number must match EXACTLY the page number shown for that chunk_id in Context "
-        "- quote must be copied VERBATIM (word-for-word) from that exact chunk, no paraphrasing "
-        "- quote must be <= 25 words and be a continuous excerpt from the context "
+        "- quote can be a brief summary or reference (<= 25 words) describing the relevant content from that chunk "
+        "- quote does NOT need to be an exact quote - it can paraphrase or summarize the key point "
         "- Include multiple citations if your answer draws from multiple chunks "
 
         "If the report does NOT clearly contain the answer, set not_found=true and say you cannot find it in the report. "
@@ -186,8 +183,7 @@ def ask(req: AskRequest):
         "\"not_found\": boolean"
         "}\n\n"
         "Constraints:\n"
-        "- quote MUST be copied VERBATIM (word-for-word) from the context - NO paraphrasing allowed\n"
-        "- quote must be <= 25 words and be a continuous excerpt from the context\n"
+        "- quote can be a brief summary or reference (<= 25 words) - does NOT need to be exact quote\n"
         "- chunk_id must match EXACTLY a chunk_id shown in the Context blocks above\n"
         "- page number must match EXACTLY the page number shown for that chunk_id in Context\n"
         "- citations must reference only chunk_ids and pages shown in Context\n"
@@ -196,7 +192,6 @@ def ask(req: AskRequest):
         "- If not_found=true, citations should be an empty array\n"
         "- answer must be 3-6 sentences with structure: main finding → reasoning → specifics\n"
         "- answer should synthesize key_points with analytical depth, not just list facts\n"
-        "- Before including any quote, verify it exists exactly as written in the context\n"
     )
 
     # Use GPT-4o-mini (fastest, most cost-effective available model)
@@ -226,7 +221,7 @@ def ask(req: AskRequest):
             not_found=True,
         )
 
-    # 5) Validate citations: verify quotes exist in context and match chunk_id/page
+    # 5) Validate citations: verify chunk_id and page match (quote can be paraphrased)
     if "citations" in data and isinstance(data["citations"], list):
         # Build lookup: chunk_id -> (page, document_text)
         chunk_lookup = {}
@@ -241,17 +236,11 @@ def ask(req: AskRequest):
             page = cit.get("page")
             quote = cit.get("quote", "").strip()
             
-            # Verify chunk_id exists and page matches
+            # Verify chunk_id exists and page matches (quote can be paraphrased, so we don't validate it)
             if chunk_id in chunk_lookup:
                 expected_page, doc_text = chunk_lookup[chunk_id]
                 if page == expected_page:
-                    # Check if quote exists in document (case-insensitive, allow for minor whitespace)
-                    quote_normalized = " ".join(quote.split())
-                    doc_normalized = " ".join(doc_text.split())
-                    if quote_normalized.lower() in doc_normalized.lower():
-                        validated_citations.append(cit)
-                    else:
-                        print(f"[WARN] Quote not found in context for chunk_id {chunk_id}: '{quote[:50]}...'")
+                    validated_citations.append(cit)
                 else:
                     print(f"[WARN] Page mismatch for chunk_id {chunk_id}: expected {expected_page}, got {page}")
             else:
