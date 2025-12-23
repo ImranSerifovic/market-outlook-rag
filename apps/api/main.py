@@ -142,6 +142,7 @@ def ask(req: AskRequest):
         "Citations are required to show sources - the 'quote' field can be a brief summary or reference to the relevant content, not necessarily an exact quote. "
 
         "Write in a crisp, investor-ready style with analytical depth. "
+        "Imagine the reader is an experienced investor who is familiar with the report and the industry. "
         "The 'answer' should be structured to: lead with the main finding, provide reasoning and causal drivers, "
         "include concrete specifics (numbers, trends, mechanisms), and synthesize across excerpts when relevant. "
         "Aim for 3–6 sentences that balance conciseness with depth. "
