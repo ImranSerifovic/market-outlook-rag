@@ -6,6 +6,7 @@ from typing import List
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 import chromadb
@@ -38,15 +39,20 @@ else:
     raw_origins = (
         [o.strip() for o in _allowed.split(",") if o.strip()] if _allowed else _default_origins
     )
-    # Normalize: browsers send Origin without a trailing slash
-    allowed_origins = [o.rstrip("/") for o in raw_origins]
+    # Normalize: browsers send Origin without a trailing slash, and ensure no extra spaces
+    allowed_origins = [o.rstrip("/").strip() for o in raw_origins if o.strip()]
+
+# Debug: log allowed origins (remove in production if sensitive)
+print(f"[CORS] Allowed origins: {allowed_origins}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 class AskRequest(BaseModel):
@@ -72,6 +78,13 @@ def health():
         "allowed_origins": allowed_origins,
         "allowed_origins_env": os.getenv("ALLOWED_ORIGINS"),
     }
+
+@app.options("/ask")
+@app.options("/api/ask")
+async def options_ask():
+    """Handle preflight OPTIONS requests - CORS middleware should handle this, but this ensures it works"""
+    # Return empty 200 - CORS middleware will add the headers
+    return Response(status_code=200)
 
 @app.post("/ask", response_model=AskResponse)
 @app.post("/api/ask", response_model=AskResponse)
