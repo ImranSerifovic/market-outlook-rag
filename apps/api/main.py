@@ -168,12 +168,13 @@ def ask(req: AskRequest):
     )
 
     llm = oai.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-4o-mini",  # Fastest model - 2-3x faster than gpt-4.1-mini
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
         temperature=0.2,
+        response_format={"type": "json_object"},  # Forces JSON, faster parsing
     )
 
     raw = llm.choices[0].message.content.strip()
