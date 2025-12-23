@@ -109,10 +109,10 @@ def ask(req: AskRequest):
         input=req.question
     ).data[0].embedding
 
-    # 2) Retrieve chunks (retrieve more than needed, then filter by distance)
+    # 2) Retrieve chunks
     results = col.query(
         query_embeddings=[q_emb],
-        n_results=min(req.top_k + 3, 15),  # Get a few extra for filtering
+        n_results=req.top_k,
         include=["documents", "metadatas", "distances"]
     )
 
@@ -120,33 +120,14 @@ def ask(req: AskRequest):
     metas = results["metadatas"][0]
     distances = results["distances"][0] if "distances" in results else []
 
-    # Filter chunks by distance threshold (cosine distance < 0.4 = good match)
-    # Lower distance = more similar. Filter out chunks that are too dissimilar.
-    filtered_docs, filtered_metas = [], []
-    for i, (d, m) in enumerate(zip(docs, metas)):
-        dist = distances[i] if i < len(distances) else 1.0
-        # Only include chunks with distance < 0.4 (you can adjust this threshold)
-        if dist < 0.4:
-            filtered_docs.append(d)
-            filtered_metas.append(m)
-        if len(filtered_docs) >= req.top_k:
-            break
-    
-    # Use filtered results, or fall back to original if filtering removed everything
-    if not filtered_docs:
-        filtered_docs = docs[:req.top_k]
-        filtered_metas = metas[:req.top_k]
-
     # Debug: log retrieved pages
-    retrieved_pages = [m["page"] for m in filtered_metas]
-    print(f"[DEBUG] Retrieved {len(filtered_docs)} chunks from pages: {sorted(set(retrieved_pages))}")
+    retrieved_pages = [m["page"] for m in metas]
+    print(f"[DEBUG] Retrieved {len(docs)} chunks from pages: {sorted(set(retrieved_pages))}")
+    print(f"[DEBUG] Page range: {min(retrieved_pages) if retrieved_pages else 'N/A'} - {max(retrieved_pages) if retrieved_pages else 'N/A'}")
 
-    # Build context blocks (truncate very long chunks to keep context manageable)
     context_blocks = []
-    MAX_CHUNK_CHARS = 800  # Reduced from ~1200 to speed up LLM processing
-    for d, m in zip(filtered_docs, filtered_metas):
-        truncated = d[:MAX_CHUNK_CHARS] + "..." if len(d) > MAX_CHUNK_CHARS else d
-        context_blocks.append(f"[{m['chunk_id']} | page {m['page']}]\n{truncated}")
+    for d, m in zip(docs, metas):
+        context_blocks.append(f"[{m['chunk_id']} | page {m['page']}]\n{d}")
 
     # 3) Ask LLM (strict grounding + JSON output)
     system = (
@@ -159,12 +140,12 @@ def ask(req: AskRequest):
     user = (
         f"Question: {req.question}\n\n"
         "Context:\n" + "\n\n".join(context_blocks) + "\n\n"
-        "Return a JSON object with this exact structure:\n"
-        "{\n"
-        '  "answer": "string",\n'
-        '  "key_points": ["string", ...],\n'
-        '  "citations": [{"chunk_id": "string", "page": number, "quote": "string"}, ...],\n'
-        '  "not_found": boolean\n'
+        "Schema:\n"
+        "{"
+        "\"answer\": string, "
+        "\"key_points\": array of strings, "
+        "\"citations\": array of {\"chunk_id\": string, \"page\": number, \"quote\": string}, "
+        "\"not_found\": boolean"
         "}\n\n"
         "Constraints:\n"
         "- quote must be a short snippet copied from the context (<= 25 words)\n"
@@ -172,15 +153,13 @@ def ask(req: AskRequest):
         "- If not_found=true, citations should be an empty array\n"
     )
 
-    # Use faster model and JSON mode for faster, more reliable parsing
     llm = oai.chat.completions.create(
-        model="gpt-4o-mini",  # Faster than gpt-4.1-mini
+        model="gpt-4.1-mini",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
         temperature=0.2,
-        response_format={"type": "json_object"},  # Forces JSON output, faster parsing
     )
 
     raw = llm.choices[0].message.content.strip()

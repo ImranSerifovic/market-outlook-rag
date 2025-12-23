@@ -21,7 +21,7 @@ export default function Page() {
     []
   );
 
-  const TOP_K = 6; // number of passages retrieved from the report (reduced for faster responses)
+  const TOP_K = 9; // number of passages retrieved from the report
   const PDF_PUBLIC_PATH = "/report.pdf";
 
   const SUGGESTED_QUESTIONS: string[] = [
