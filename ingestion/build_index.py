@@ -8,7 +8,9 @@ import sys
 import time
 
 # #region agent log
-LOG_PATH = "/Users/imranserifovic/market-outlook-rag/.cursor/debug.log"
+# Write logs to a safe location in any environment (override via MOA_LOG_PATH if desired)
+_DEFAULT_LOG = Path(os.getenv("TMPDIR", "/tmp")) / "market_outlook_debug.log"
+LOG_PATH = os.getenv("MOA_LOG_PATH", str(_DEFAULT_LOG))
 try:
     with open(LOG_PATH, "a") as f:
         f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "ALL", "location": "build_index.py:import", "message": "Module imported", "data": {}, "timestamp": int(time.time() * 1000)}) + "\n")
@@ -39,7 +41,9 @@ def main():
             f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "ALL", "location": "build_index.py:22", "message": "ROOT path resolved", "data": {"root": str(ROOT)}, "timestamp": int(time.time() * 1000)}) + "\n")
     except: pass
     # #endregion
-    load_dotenv(ROOT / ".env")
+    # In production (e.g., Render), env vars are typically injected by the platform.
+    # Locally, you may have a ROOT/.env file.
+    load_dotenv(ROOT / ".env", override=False)
     # #region agent log
     try:
         with open(LOG_PATH, "a") as f:
@@ -74,7 +78,7 @@ def main():
         try:
             with open(LOG_PATH, "a") as f:
                 f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "build_index.py:50", "message": "Pages extracted", "data": {"num_pages": len(pages)}, "timestamp": int(time.time() * 1000)}) + "\n")
-        except: pass
+        except: pass 
         # #endregion
     except Exception as e:
         # #region agent log
@@ -86,7 +90,9 @@ def main():
         raise
 
     # ---- Chroma persistent storage
-    persist_dir = ROOT / "storage" / "chroma"
+    # Allow override for production deploys (e.g., CHROMA_DIR=/app/storage/chroma)
+    chroma_dir = os.getenv("CHROMA_DIR")
+    persist_dir = Path(chroma_dir) if chroma_dir else (ROOT / "storage" / "chroma")
     persist_dir.mkdir(parents=True, exist_ok=True)
     ch = chromadb.PersistentClient(path=str(persist_dir))
 

@@ -9,7 +9,6 @@ RUN pip install --no-cache-dir -r /app/apps/api/requirements.txt
 # Copy app + ingestion utils + prebuilt Chroma index
 COPY apps/api /app/apps/api
 COPY ingestion /app/ingestion
-COPY storage /app/storage
 
 ENV PYTHONPATH=/app
 EXPOSE 8000
