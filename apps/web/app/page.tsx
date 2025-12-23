@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
 type Citation = {
   chunk_id: string;
@@ -66,7 +67,13 @@ export default function Page() {
       const raw = localStorage.getItem(HISTORY_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) setHistory(parsed.filter((x) => typeof x === "string"));
+        if (Array.isArray(parsed)) {
+          // Limit to MAX_HISTORY items when loading from storage
+          const validHistory = parsed
+            .filter((x) => typeof x === "string")
+            .slice(0, MAX_HISTORY);
+          setHistory(validHistory);
+        }
       }
     } catch {
       // ignore
@@ -83,8 +90,11 @@ export default function Page() {
 
   function pushHistory(q: string) {
     setHistory((prev) => {
-      const next = [q, ...prev.filter((x) => x !== q)].slice(0, MAX_HISTORY);
-      return next;
+      // Remove duplicates, add new question to front
+      const withoutDuplicate = prev.filter((x) => x !== q);
+      const withNew = [q, ...withoutDuplicate];
+      // Keep only the most recent MAX_HISTORY items (remove oldest if we exceed limit)
+      return withNew.slice(0, MAX_HISTORY);
     });
   }
 
@@ -135,7 +145,30 @@ export default function Page() {
     <main className="min-h-screen bg-zinc-950 text-zinc-100">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,360px]">
-          <header className="mb-8">
+          <header className="mb-8 relative">
+            <div className="absolute top-0 right-0">
+              <Link
+                href="/about"
+                className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900/80 hover:text-zinc-100 transition-colors"
+                title="About this project"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                <span className="hidden sm:inline">About</span>
+              </Link>
+            </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300">
               RAG Prototype • Single PDF • Grounded Q&A
             </div>
