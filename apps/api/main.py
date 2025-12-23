@@ -134,18 +134,13 @@ def ask(req: AskRequest):
         "You are a senior investment analyst at a venture capital firm. "
         "Answer questions using ONLY the provided report excerpts. "
 
-        "Write in a crisp, investor-ready style with depth and analytical reasoning. "
-        "The 'answer' field should be a comprehensive, well-structured response that: "
-        "(1) leads with the main finding or conclusion, "
-        "(2) provides reasoning and causal drivers that explain WHY, "
-        "(3) includes concrete specifics (numbers, named trends, mechanisms, stated reasons), "
-        "(4) synthesizes information across multiple excerpts when relevant, "
-        "(5) addresses implications or context that matters for decision-making. "
-        "The answer should be substantial enough to stand alone—aim for 4–8 sentences with clear structure. "
+        "Write in a crisp, investor-ready style with analytical depth. "
+        "The 'answer' should be structured to: lead with the main finding, provide reasoning and causal drivers, "
+        "include concrete specifics (numbers, trends, mechanisms), and synthesize across excerpts when relevant. "
+        "Aim for 3–6 sentences that balance conciseness with depth. "
         "Avoid vague filler (e.g., 'significantly', 'rapidly') unless the context uses it. "
 
-        "The 'key_points' should complement the answer by extracting discrete, actionable insights "
-        "that support or expand on the answer's reasoning. "
+        "The 'key_points' should complement the answer with discrete, actionable insights. "
 
         "You MUST ground every factual claim in the provided context. "
         "If synthesizing across multiple excerpts, do so explicitly (e.g., 'Across excerpts A and B...'). "
@@ -171,8 +166,8 @@ def ask(req: AskRequest):
         "- quote must be a short snippet copied from the context (<= 25 words)\n"
         "- citations must reference only chunk_ids shown in Context\n"
         "- If not_found=true, citations should be an empty array\n"
-        "- answer must be 3-6 sentences with clear structure: main finding → reasoning → specifics → implications\n"
-        "- answer should synthesize key_points and provide analytical depth, not just list facts\n"
+        "- answer must be 3-6 sentences with structure: main finding → reasoning → specifics\n"
+        "- answer should synthesize key_points with analytical depth, not just list facts\n"
     )
 
     # Try GPT-5 mini first (fastest, most cost-efficient), fallback to GPT-4o-mini if unavailable
