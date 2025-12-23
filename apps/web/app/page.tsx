@@ -22,7 +22,7 @@ export default function Page() {
     []
   );
 
-  const TOP_K = 6; // number of passages retrieved from the report
+  const TOP_K = 8; // number of passages retrieved from the report
   const PDF_PUBLIC_PATH = "/report.pdf";
 
   const SUGGESTED_QUESTIONS: string[] = [

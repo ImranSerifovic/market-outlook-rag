@@ -168,7 +168,7 @@ def ask(req: AskRequest):
     )
 
     llm = oai.chat.completions.create(
-        model="gpt-4o-mini",  # Fastest model - 2-3x faster than gpt-4.1-mini
+        model="gpt-5-mini",  # Fastest model - 2-3x faster than gpt-4.1-mini
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
