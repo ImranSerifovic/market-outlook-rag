@@ -22,7 +22,7 @@ export default function Page() {
     []
   );
 
-  const TOP_K = 9; // number of passages retrieved from the report
+  const TOP_K = 8; // number of passages retrieved from the report
   const PDF_PUBLIC_PATH = "/report.pdf";
 
   const SUGGESTED_QUESTIONS: string[] = [
@@ -43,6 +43,7 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AskResponse | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [isFocused, setIsFocused] = useState(false);
 
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfPage, setPdfPage] = useState<number>(1);
@@ -142,7 +143,7 @@ export default function Page() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
+    <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 text-zinc-100">
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,360px]">
           <header className="mb-8 relative">
@@ -166,7 +167,7 @@ export default function Page() {
                     d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
                   />
                 </svg>
-                <span className="hidden sm:inline">About</span>
+                <span className="hidden sm:inline">How it works</span>
               </Link>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-300">
@@ -189,11 +190,15 @@ export default function Page() {
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={onQuestionKeyDown}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     rows={4}
                     placeholder='e.g., "What are the main themes of the report?"'
                     className={`w-full resize-none rounded-2xl border bg-zinc-950/60 px-4 py-3 text-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-700 transition-all ${
                       loading
-                        ? "border-white/30 glow-border"
+                        ? "border-white/50 glow-border-bright"
+                        : isFocused
+                        ? "border-zinc-600 glow-border-subtle"
                         : "border-zinc-800"
                     }`}
                   />
@@ -411,20 +416,32 @@ export default function Page() {
         .dot:nth-child(2) { animation-delay: 0.15s; }
         .dot:nth-child(3) { animation-delay: 0.3s; }
 
-        @keyframes glow {
+        @keyframes glowSubtle {
           0%, 100% {
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3),
-                        0 0 12px rgba(255, 255, 255, 0.2),
-                        0 0 16px rgba(255, 255, 255, 0.1);
-          }
-          50% {
-            box-shadow: 0 0 12px rgba(255, 255, 255, 0.5),
-                        0 0 18px rgba(255, 255, 255, 0.3),
-                        0 0 24px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.1),
+                        0 0 6px rgba(255, 255, 255, 0.05);
           }
         }
-        .glow-border {
-          animation: glow 2s ease-in-out infinite;
+        .glow-border-subtle {
+          animation: glowSubtle 2s ease-in-out infinite;
+        }
+
+        @keyframes glowBright {
+          0%, 100% {
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.6),
+                        0 0 20px rgba(255, 255, 255, 0.4),
+                        0 0 30px rgba(255, 255, 255, 0.3),
+                        0 0 40px rgba(255, 255, 255, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
+                        0 0 30px rgba(255, 255, 255, 0.6),
+                        0 0 40px rgba(255, 255, 255, 0.4),
+                        0 0 50px rgba(255, 255, 255, 0.3);
+          }
+        }
+        .glow-border-bright {
+          animation: glowBright 1.5s ease-in-out infinite;
         }
 
         .chip, .history-item {
