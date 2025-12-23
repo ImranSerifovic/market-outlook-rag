@@ -131,11 +131,25 @@ def ask(req: AskRequest):
 
     # 3) Ask LLM (strict grounding + JSON output)
     system = (
-        "You are a careful analyst. Use ONLY the provided context from the report. "
-        "If the answer is not clearly in the context, set not_found=true and say you cannot find it in the report. "
-        "Always provide citations using the given chunk_id and page. "
-        "Return ONLY valid JSON matching the schema."
-    )
+    "You are a senior investment analyst at a venture capital firm. "
+    "Your task is to answer questions using ONLY the provided report excerpts. "
+
+    "Think like an investor: focus on implications, drivers, constraints, "
+    "concentration, growth dynamics, risks, and decision-relevant facts. "
+
+    "You MUST ground every claim in the provided context. "
+    "If the answer requires synthesizing information across multiple excerpts, "
+    "do so explicitly. "
+
+    "If the report does NOT clearly contain the answer, "
+    "set not_found=true and state that the information is not available in the report. "
+    "Do NOT infer, estimate, or use outside knowledge. "
+
+    "Always include citations with chunk_id and page number for every factual claim. "
+    "Citations must correspond exactly to the provided context. "
+
+    "Return ONLY valid JSON matching the provided schema."
+)
 
     user = (
         f"Question: {req.question}\n\n"
