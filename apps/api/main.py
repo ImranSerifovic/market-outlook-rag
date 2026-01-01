@@ -257,27 +257,17 @@ def ask(req: AskRequest):
 
         "The 'key_points' should complement the answer with discrete, actionable insights. "
 
-        "You MUST ground every factual claim in the provided context. "
-        "If synthesizing across multiple excerpts, do so explicitly (e.g., 'Across excerpts A and B...'). "
-
         "CRITICAL CITATION REQUIREMENTS: "
-        "You MUST provide citations for EVERY factual claim, statistic, number, or specific detail mentioned in your answer. "
-        "If your answer mentions multiple facts from different parts of the context, you MUST cite ALL of them. "
-        "Examples: If you mention '$56 billion', '40% increase', 'H1 2025', 'release valve', or any specific concept, "
-        "each of these MUST have a corresponding citation pointing to where it appears in the context. "
-        "Do NOT cite only one source if your answer synthesizes information from multiple chunks. "
-        "Include separate citations for each distinct factual claim or statistic. "
+        "You MUST provide citations ONLY in the 'citations' field — never inside the prose of the 'answer' or 'key_points'. "
+        "The 'answer' and 'key_points' must read cleanly with NO inline citations, page references, or chunk IDs. "
 
-        "Citation format requirements: "
-        "- chunk_id must match EXACTLY a chunk_id shown in the Context blocks "
-        "- page number must match EXACTLY the page number shown for that chunk_id in Context "
-        "- quote can be a brief summary or reference (<= 25 words) describing the relevant content from that chunk "
-        "- quote does NOT need to be an exact quote - it can paraphrase or summarize the key point "
-        "- Include multiple citations if your answer draws from multiple chunks "
+        "Every factual claim, statistic, or specific detail in the answer MUST still be backed by a citation, "
+        "but those citations must appear exclusively in the 'citations' array. "
 
-        "If the report does NOT clearly contain the answer, set not_found=true and say you cannot find it in the report. "
-        "Do NOT infer, estimate, or use outside knowledge. "
-        "Return ONLY valid JSON matching the provided schema." 
+        "If multiple facts are used, include multiple citation objects — one per fact — in the 'citations' array. "
+        "Do NOT include citations in parentheses or inline text. "
+
+        "The 'citations' field must still include: chunk_id, page, and a short quote or summary. "
     )
 
     user = (
