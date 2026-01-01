@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 import chromadb
 from openai import OpenAI
@@ -268,6 +268,12 @@ def ask(req: AskRequest):
         "Do NOT include citations in parentheses or inline text. "
 
         "The 'citations' field must still include: chunk_id, page, and a short quote or summary. "
+        "You MUST ground every factual claim in the provided context. "
+        "If synthesizing across multiple excerpts, do so explicitly (e.g., 'Across excerpts A and B...'). "
+        "If the report does NOT clearly contain the answer, set not_found=true and say you cannot find it in the report. "
+        "Do NOT infer, estimate, or use outside knowledge. "
+        "Return ONLY valid JSON matching the provided schema, and ALWAYS include all four top-level keys: "
+        "answer, key_points, citations, not_found. "
     )
 
     user = (
@@ -353,4 +359,13 @@ def ask(req: AskRequest):
     except Exception as e:
         print(f"[WARN] Numeric citation enforcement failed: {e}")
 
-    return AskResponse(**data)
+    try:
+        return AskResponse(**data)
+    except ValidationError as e:
+        print(f"[ERROR] Response validation failed: {e}")
+        return AskResponse(
+            answer="I could not produce a valid structured response for this question.",
+            key_points=["Try re-asking the question with a narrower scope."],
+            citations=[],
+            not_found=True,
+        )
